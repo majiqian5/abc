@@ -12,20 +12,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Theos
+      - name: Install dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq git build-essential fakeroot libxml2-dev libssl-dev zlib1g-dev
-          git clone --recursive https://github.com/theos/theos.git $THEOS
+          sudo apt-get install -y -qq git build-essential fakeroot libxml2-dev libssl-dev zlib1g-dev curl xz-utils
+
+      - name: Install Theos (official installer)
+        run: |
+          export THEOS=$HOME/theos
           echo "THEOS=$THEOS" >> $GITHUB_ENV
-        env:
-          THEOS: ${{ github.workspace }}/theos
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          ls $THEOS/toolchain/linux/iphone/bin/clang
 
       - name: Install iOS SDK
         run: |
           git clone --depth 1 https://github.com/xybp888/iOS-SDKs.git sdk-repo
-          ls sdk-repo/*.sdk 2>/dev/null || ls sdk-repo/
-          # 自动选择可用的 iOS 16 SDK
           for sdk in sdk-repo/iPhoneOS16.*.sdk; do
             if [ -d "$sdk" ]; then
               cp -r "$sdk" $THEOS/sdks/
@@ -37,18 +38,16 @@ jobs:
 
       - name: Fix Makefile SDK version
         run: |
-          # 自动检测可用的SDK版本并更新Makefile
           SDK_VERSION=$(ls $THEOS/sdks | grep -o '16\.[0-9]*' | head -1)
           echo "Detected SDK version: $SDK_VERSION"
           sed -i "s/iphone:clang:16\.[0-9]*:/iphone:clang:${SDK_VERSION}:/" Makefile
-          cat Makefile | head -5
+          head -5 Makefile
 
       - name: Build (Rootless)
         run: |
-          export THEOS=$THEOS
           make clean package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
         env:
-          THEOS: ${{ github.workspace }}/theos
+          THEOS: ${{ env.THEOS }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
