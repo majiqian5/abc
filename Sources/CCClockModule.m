@@ -11,9 +11,4 @@
     return self;
 }
 
-- (void)dealloc {
-    [_contentViewController release];
-    [super dealloc];
-}
-
 @end
