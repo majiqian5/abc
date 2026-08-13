@@ -7,7 +7,6 @@
 
     self.view.backgroundColor = [UIColor clearColor];
 
-    // 时间标签
     self.timeLabel = [[UILabel alloc] init];
     self.timeLabel.textAlignment = NSTextAlignmentCenter;
     self.timeLabel.textColor = [UIColor whiteColor];
@@ -15,7 +14,6 @@
     self.timeLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [self.view addSubview:self.timeLabel];
 
-    // 日期标签
     self.dateLabel = [[UILabel alloc] init];
     self.dateLabel.textAlignment = NSTextAlignmentCenter;
     self.dateLabel.textColor = [UIColor colorWithWhite:1.0 alpha:0.7];
@@ -23,7 +21,6 @@
     self.dateLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [self.view addSubview:self.dateLabel];
 
-    // 布局约束
     [NSLayoutConstraint activateConstraints:@[
         [self.timeLabel.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor],
         [self.timeLabel.centerYAnchor constraintEqualToAnchor:self.view.centerYAnchor constant:-10],
@@ -66,20 +63,15 @@
     NSDateFormatter *timeFormatter = [[NSDateFormatter alloc] init];
     [timeFormatter setDateFormat:@"HH:mm"];
     self.timeLabel.text = [timeFormatter stringFromDate:now];
-    [timeFormatter release];
 
     NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
     [dateFormatter setDateFormat:@"MM月dd日 EEEE"];
     [dateFormatter setLocale:[NSLocale currentLocale]];
     self.dateLabel.text = [dateFormatter stringFromDate:now];
-    [dateFormatter release];
 }
 
 - (void)dealloc {
     [self stopTimer];
-    [self.timeLabel release];
-    [self.dateLabel release];
-    [super dealloc];
 }
 
 @end
