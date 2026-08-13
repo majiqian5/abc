@@ -23,10 +23,25 @@ jobs:
 
       - name: Install iOS SDK
         run: |
-          curl -L -o iPhoneOS.sdk.tar.xz "https://github.com/xybp888/iOS-SDKs/releases/download/iOS-SDKs/iPhoneOS16.5.sdk.tar.xz"
-          mkdir -p $THEOS/sdks
-          tar -xf iPhoneOS.sdk.tar.xz -C $THEOS/sdks
+          git clone --depth 1 https://github.com/xybp888/iOS-SDKs.git sdk-repo
+          ls sdk-repo/*.sdk 2>/dev/null || ls sdk-repo/
+          # 自动选择可用的 iOS 16 SDK
+          for sdk in sdk-repo/iPhoneOS16.*.sdk; do
+            if [ -d "$sdk" ]; then
+              cp -r "$sdk" $THEOS/sdks/
+              echo "Using SDK: $sdk"
+              break
+            fi
+          done
           ls $THEOS/sdks
+
+      - name: Fix Makefile SDK version
+        run: |
+          # 自动检测可用的SDK版本并更新Makefile
+          SDK_VERSION=$(ls $THEOS/sdks | grep -o '16\.[0-9]*' | head -1)
+          echo "Detected SDK version: $SDK_VERSION"
+          sed -i "s/iphone:clang:16\.[0-9]*:/iphone:clang:${SDK_VERSION}:/" Makefile
+          cat Makefile | head -5
 
       - name: Build (Rootless)
         run: |
