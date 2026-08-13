@@ -1,0 +1,10 @@
+Package: com.yourname.ccclockmodule
+Name: CCClock
+Version: 1.0.0
+Architecture: iphoneos-arm64
+Description: 控制中心时钟模块 - 在控制中心显示当前时间和日期
+Maintainer: Your Name
+Author: Your Name
+Section: 控制中心
+Depends: firmware (>= 14.0)
+Homepage: https://github.com/yourname/CCClockModule
