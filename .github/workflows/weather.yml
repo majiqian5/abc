@@ -4,42 +4,58 @@ on:
   push:
     paths:
       - 'src/AxsWeatherLock.m'
+      - 'src/WeatherLockPrefs.m'
       - 'AxsWeatherLock.m'
+      - 'WeatherLockPrefs.m'
       - '.github/workflows/weather.yml'
 jobs:
   build:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-      - name: Build arm64e dylib
+      - name: Compile
         run: |
           set -e
-          echo "== repo .m files =="
-          find . -name "*.m" -maxdepth 4 -print || true
-          SRC=$(find . -name "AxsWeatherLock.m" | head -1)
-          if [ -z "$SRC" ]; then
-            echo "::error::AxsWeatherLock.m not found in repo"
-            exit 1
-          fi
-          echo "using: $SRC"
-          wc -l "$SRC"
+          T=$(find . -maxdepth 4 -name "AxsWeatherLock.m" | head -1)
+          P=$(find . -maxdepth 4 -name "WeatherLockPrefs.m" | head -1)
+          [ -n "$T" ] || { echo "::error::AxsWeatherLock.m 找不到"; exit 1; }
+          [ -n "$P" ] || { echo "::error::WeatherLockPrefs.m 找不到（设置面板那个 5 行小文件）"; exit 1; }
+          echo "tweak=$T"; echo "prefs=$P"
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
-          mkdir -p out
+          rm -rf out; mkdir -p out/WeatherLockPrefs.bundle
           xcrun --sdk iphoneos clang -target arm64e-apple-ios15.0 \
             -isysroot "$SDK" -dynamiclib -O2 -fobjc-arc \
             -framework UIKit -framework Foundation \
-            -framework CoreGraphics -framework QuartzCore -framework CoreText \
+            -framework CoreGraphics -framework QuartzCore \
             -install_name /var/jb/Library/MobileSubstrate/DynamicLibraries/AxsWeatherLock.dylib \
-            -o out/AxsWeatherLock.dylib "$SRC"
+            -o out/AxsWeatherLock.dylib "$T"
+          xcrun --sdk iphoneos clang -target arm64e-apple-ios15.0 \
+            -isysroot "$SDK" -bundle -O2 -fobjc-arc \
+            -framework Foundation \
+            -o out/WeatherLockPrefs.bundle/WeatherLockPrefs "$P"
           otool -hv out/AxsWeatherLock.dylib | head -4
-          lipo -info out/AxsWeatherLock.dylib
+      - name: Make preference plists
+        run: |
+          set -e
+          if [ -f tools/make_prefs.py ]; then
+            python3 tools/make_prefs.py out
+          else
+            curl -fsSL "https://aka.doubaocdn.com/s/2dGSSnzEwV" -o /tmp/make_prefs.py
+            python3 /tmp/make_prefs.py out
+          fi
+          ls -R out
       - name: Sign
         run: |
           brew install ldid >/dev/null 2>&1 || true
-          ldid -S out/AxsWeatherLock.dylib || codesign -s - -f out/AxsWeatherLock.dylib
+          for f in out/AxsWeatherLock.dylib out/WeatherLockPrefs.bundle/WeatherLockPrefs; do
+            ldid -S "$f" || codesign -s - -f "$f"
+          done
+      - name: Upload
+        run: |
+          cd out && zip -qr weatherlock-arm64e.zip AxsWeatherLock.dylib WeatherLockPrefs.bundle WeatherLock.plist
       - uses: actions/upload-artifact@v4
         with:
           name: weatherlock-arm64e
-          path: out/AxsWeatherLock.dylib
+          path: out/weatherlock-arm64e.zip
 
         
