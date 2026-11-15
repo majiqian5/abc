@@ -9,6 +9,7 @@
 //   3) bg 支持 weather / dark / none / #RRGGBB（旧版只认数字）
 //   4) 文字改用 UIKit 逐字绘制（旧版 CTLine 在翻转坐标系下有上下颠倒风险）
 //   5) 增加 AQI、今日最高最低、日出日落、超宽自动换行
+//  v2.3：不再依赖 isLocked —— 直接 hook 锁屏控制器，把视图贴到锁屏 view 上
 //  v2.2：加诊断日志 /var/tmp/axswl.log；场景查找三重兜底（防止取不到 windowScene 导致窗口不创建）
 //
 
@@ -433,9 +434,8 @@ static NSTimer *gTimer = nil;
 static NSTimeInterval gLastFetch = 0;
 static void fetchWeather(void);
 
-static void relayout(void) {
-    if (!gWin || !gView) return;
-    CGFloat w = gWin.frame.size.width;
+static void relayoutW(CGFloat w) {
+    if (!gView) return;
     CGFloat pad = cfgNum(@"pad", 12);
     double width = cfgNum(@"width", 999);
     if (width <= 0 || width > w) width = w - pad * 2;
@@ -443,6 +443,10 @@ static void relayout(void) {
     CGFloat y = cfgNum(@"offy", 120);
     CGFloat h = cfgNum(@"height", 108);
     gView.frame = CGRectMake(x, y, width, h);
+}
+static void relayout(void) {
+    if (!gWin) return;
+    relayoutW(gWin.frame.size.width);
 }
 
 static void ensureWindow(void) {
@@ -511,7 +515,7 @@ static void tick(void) {
         relayout();
         [gView setNeedsDisplay];
     }
-    if (!locked) return;
+    // 数据刷新与锁屏状态无关，只要窗口/视图在就保持数据新鲜
 
     // refresh 键被 axs_weather refresh 更新 → 立即拉一次
     static double lastRef = 0;
@@ -560,6 +564,57 @@ static void fetchWeather(void) {
     }] resume];
 }
 
+// ---------------------------------------------------------------- 锁屏视图挂载（不依赖 isLocked）
+static void attachToLockView(id vc) {
+    UIView *host = [(UIViewController *)vc view];
+    if (!host) return;
+    if (!gView) {
+        gView = [[WLView alloc] initWithFrame:CGRectZero];
+        gView.backgroundColor = [UIColor clearColor];
+    }
+    if (gView.superview != host) [host addSubview:gView];
+    gView.userInteractionEnabled = NO;
+    relayoutW(host.bounds.size.width);
+    buildLines(gView);
+    wlLog(@"attached to %@ bounds=%@", NSStringFromClass([(NSObject *)vc class]), NSStringFromCGRect(host.bounds));
+}
+
+static IMP gOrigDidAppear = NULL;
+static NSString *gHookClass = nil;
+static void wlDidAppear(id self, SEL _cmd, BOOL animated) {
+    if (gOrigDidAppear) ((void (*)(id, SEL, BOOL))gOrigDidAppear)(self, _cmd, animated);
+    attachToLockView(self);
+}
+
+static void installLockHooks(void) {
+    if (gHookClass) return;
+    NSArray *want = @[@"SBLockScreenViewControllerBase", @"SBLockScreenViewController",
+                      @"CSLockScreenViewController", @"SBLockScreenPasscodeViewController"];
+    Class target = Nil;
+    for (NSString *nm in want) {
+        Class c = NSClassFromString(nm);
+        if (c && class_getInstanceMethod(c, @selector(viewDidAppear:))) { target = c; break; }
+    }
+    if (!target) {
+        int n = objc_getClassList(NULL, 0);
+        if (n > 0) {
+            Class *all = (Class *)malloc(sizeof(Class) * n);
+            objc_getClassList(all, n);
+            for (int i = 0; i < n; i++) {
+                NSString *cn = NSStringFromClass(all[i]);
+                if ([cn containsString:@"LockScreen"] && [cn containsString:@"ViewController"]
+                    && class_getInstanceMethod(all[i], @selector(viewDidAppear:))) { target = all[i]; break; }
+            }
+            free(all);
+        }
+    }
+    if (!target) { wlLog(@"no lockscreen controller class found"); return; }
+    Method m = class_getInstanceMethod(target, @selector(viewDidAppear:));
+    gOrigDidAppear = method_setImplementation(m, (IMP)wlDidAppear);
+    gHookClass = NSStringFromClass(target);
+    wlLog(@"hooked %@ viewDidAppear", gHookClass);
+}
+
 // ---------------------------------------------------------------- 启动
 __attribute__((constructor))
 static void wl_init(void) {
@@ -578,9 +633,12 @@ static void wl_init(void) {
     }
 
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        installLockHooks();
         ensureWindow();
         buildLines(gView);
         fetchWeather();
         gTimer = [NSTimer scheduledTimerWithTimeInterval:2.0 repeats:YES block:^(NSTimer *t) { tick(); }];
     });
 }
+
+        
