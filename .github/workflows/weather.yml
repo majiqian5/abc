@@ -1,0 +1,31 @@
+name: build-weatherlock
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'src/AxsWeatherLock.m'
+      - '.github/workflows/weather.yml'
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build arm64e dylib
+        run: |
+          set -e
+          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          mkdir -p out
+          xcrun --sdk iphoneos clang -target arm64e-apple-ios15.0 \
+            -isysroot "$SDK" -dynamiclib -O2 -fobjc-arc \
+            -framework UIKit -framework Foundation -framework CoreText \
+            -install_name /var/jb/Library/MobileSubstrate/DynamicLibraries/AxsWeatherLock.dylib \
+            -o out/AxsWeatherLock.dylib src/AxsWeatherLock.m
+          otool -hv out/AxsWeatherLock.dylib | head -4
+      - name: Sign
+        run: |
+          brew install ldid >/dev/null 2>&1 || true
+          ldid -S out/AxsWeatherLock.dylib || codesign -s - -f out/AxsWeatherLock.dylib
+      - uses: actions/upload-artifact@v4
+        with:
+          name: weatherlock-arm64e
+          path: out/AxsWeatherLock.dylib
