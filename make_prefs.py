@@ -57,21 +57,30 @@ specs = [
     switch("daily", "显示今日高低 / 日出日落", True),
 ]
 
+root = {"title": "锁屏天气", "items": specs}
+with open(os.path.join(B, "WeatherLockRoot.plist"), "wb") as f:
+    plistlib.dump(root, f)
+
 info = {
     "CFBundleIdentifier": "com.axs.weatherlockprefs",
     "CFBundleName": "锁屏天气",
     "CFBundleExecutable": "WeatherLockPrefs",
     "CFBundlePackageType": "BNDL",
-    "CFBundleVersion": "2.1",
-    "CFBundleShortVersionString": "2.1",
+    "CFBundleVersion": "2.4",
+    "CFBundleShortVersionString": "2.4",
     "CFBundleInfoDictionaryVersion": "6.0",
-    "NSPrincipalClass": "PSListController",
-    "PreferenceSpecifiers": specs,
+    "NSPrincipalClass": "WeatherLockRootListController",
 }
 with open(os.path.join(B, "Info.plist"), "wb") as f:
     plistlib.dump(info, f)
 
-pl = {"entry": {"bundle": "WeatherLockPrefs", "cell": "PSLinkCell", "label": "锁屏天气"}}
+pl = {"entry": {
+    "bundle": "WeatherLockPrefs",
+    "cell": "PSLinkCell",
+    "detail": "WeatherLockRootListController",
+    "isController": True,
+    "label": "锁屏天气",
+}}
 with open(os.path.join(out, "WeatherLock.plist"), "wb") as f:
     plistlib.dump(pl, f)
 print("prefs plists written to", out)

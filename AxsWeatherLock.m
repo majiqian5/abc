@@ -9,6 +9,7 @@
 //   3) bg 支持 weather / dark / none / #RRGGBB（旧版只认数字）
 //   4) 文字改用 UIKit 逐字绘制（旧版 CTLine 在翻转坐标系下有上下颠倒风险）
 //   5) 增加 AQI、今日最高最低、日出日落、超宽自动换行
+//  v2.4：钩子改为只在目标类自己实现时替换，否则 class_addMethod（避免污染整个继承链）
 //  v2.3：不再依赖 isLocked —— 直接 hook 锁屏控制器，把视图贴到锁屏 view 上
 //  v2.2：加诊断日志 /var/tmp/axswl.log；场景查找三重兜底（防止取不到 windowScene 导致窗口不创建）
 //
@@ -566,13 +567,19 @@ static void fetchWeather(void) {
 
 // ---------------------------------------------------------------- 锁屏视图挂载（不依赖 isLocked）
 static void attachToLockView(id vc) {
+    NSString *cn = NSStringFromClass([(NSObject *)vc class]);
+    if (!([cn containsString:@"LockScreen"] || [cn containsString:@"ProudLock"] || [cn containsString:@"CoverSheet"])) return;
     UIView *host = [(UIViewController *)vc view];
     if (!host) return;
+    if (host.bounds.size.height < 200) return;      // 跳过零尺寸/小容器
     if (!gView) {
         gView = [[WLView alloc] initWithFrame:CGRectZero];
         gView.backgroundColor = [UIColor clearColor];
     }
-    if (gView.superview != host) [host addSubview:gView];
+    if (gView.superview != host) {
+        [gView removeFromSuperview];
+        [host addSubview:gView];
+    }
     gView.userInteractionEnabled = NO;
     relayoutW(host.bounds.size.width);
     buildLines(gView);
@@ -609,10 +616,21 @@ static void installLockHooks(void) {
         }
     }
     if (!target) { wlLog(@"no lockscreen controller class found"); return; }
-    Method m = class_getInstanceMethod(target, @selector(viewDidAppear:));
-    gOrigDidAppear = method_setImplementation(m, (IMP)wlDidAppear);
+    SEL sel = @selector(viewDidAppear:);
+    Method m = class_getInstanceMethod(target, sel);
+    unsigned int cnt = 0;
+    Method *list = class_copyMethodList(target, &cnt);
+    BOOL owns = NO;
+    for (unsigned i = 0; i < cnt; i++) { if (method_getName(list[i]) == sel) { owns = YES; break; } }
+    free(list);
+    if (owns) {
+        gOrigDidAppear = method_setImplementation(m, (IMP)wlDidAppear);
+    } else {
+        gOrigDidAppear = method_getImplementation(m);
+        class_addMethod(target, sel, (IMP)wlDidAppear, method_getTypeEncoding(m));
+    }
     gHookClass = NSStringFromClass(target);
-    wlLog(@"hooked %@ viewDidAppear", gHookClass);
+    wlLog(@"hooked %@ viewDidAppear owns=%d", gHookClass, (int)owns);
 }
 
 // ---------------------------------------------------------------- 启动
@@ -640,5 +658,3 @@ static void wl_init(void) {
         gTimer = [NSTimer scheduledTimerWithTimeInterval:2.0 repeats:YES block:^(NSTimer *t) { tick(); }];
     });
 }
-
-        
