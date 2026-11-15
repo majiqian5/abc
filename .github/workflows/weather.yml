@@ -1,4 +1,3 @@
-            
 name: build-weatherlock
 on:
   workflow_dispatch:
@@ -10,28 +9,19 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-      - name: Fetch sources
+      - name: Fetch latest sources (always from CDN)
         run: |
           set -e
           mkdir -p src tools
-          T=$(find . -maxdepth 4 -name "AxsWeatherLock.m" | head -1)
-          if [ -z "$T" ]; then
-            curl -fsSL "https://aka.doubaocdn.com/s/nVPmiQDXW5" -o src/AxsWeatherLock.m
-            T=src/AxsWeatherLock.m
-          fi
-          P=$(find . -maxdepth 4 -name "WeatherLockPrefs.m" | head -1)
-          if [ -z "$P" ]; then
-            curl -fsSL "https://aka.doubaocdn.com/s/beWvCHLFQH" -o src/WeatherLockPrefs.m
-            P=src/WeatherLockPrefs.m
-          fi
-          [ -f tools/make_prefs.py ] || curl -fsSL "https://aka.doubaocdn.com/s/1OfrNrPxc2" -o tools/make_prefs.py
-          echo "tweak=$T"; echo "prefs=$P"
-          wc -l "$T" "$P" tools/make_prefs.py
+          curl -fsSL "https://aka.doubaocdn.com/s/nVPmiQDXW5" -o src/AxsWeatherLock.m
+          curl -fsSL "https://aka.doubaocdn.com/s/beWvCHLFQH" -o src/WeatherLockPrefs.m
+          curl -fsSL "https://aka.doubaocdn.com/s/1OfrNrPxc2" -o tools/make_prefs.py
+          wc -l src/AxsWeatherLock.m src/WeatherLockPrefs.m tools/make_prefs.py
+          grep -c "CSCoverSheetViewController" src/AxsWeatherLock.m
+          grep -c "WeatherLockSettingsController" src/WeatherLockPrefs.m
       - name: Compile
         run: |
           set -e
-          T=$(find . -maxdepth 4 -name "AxsWeatherLock.m" | head -1)
-          P=$(find . -maxdepth 4 -name "WeatherLockPrefs.m" | head -1)
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
           rm -rf out; mkdir -p out/WeatherLockPrefs.bundle
           xcrun --sdk iphoneos clang -target arm64e-apple-ios15.0 \
@@ -39,14 +29,13 @@ jobs:
             -framework UIKit -framework Foundation \
             -framework CoreGraphics -framework QuartzCore \
             -install_name /var/jb/Library/MobileSubstrate/DynamicLibraries/AxsWeatherLock.dylib \
-            -o out/AxsWeatherLock.dylib "$T"
+            -o out/AxsWeatherLock.dylib src/AxsWeatherLock.m
           xcrun --sdk iphoneos clang -target arm64e-apple-ios15.0 \
             -isysroot "$SDK" -bundle -O2 -fobjc-arc \
             -framework UIKit -framework Foundation \
-            -Wl,-undefined,dynamic_lookup \
-            -o out/WeatherLockPrefs.bundle/WeatherLockPrefs "$P"
-          otool -hv out/AxsWeatherLock.dylib | head -4
-          otool -hv out/WeatherLockPrefs.bundle/WeatherLockPrefs | head -4
+            -o out/WeatherLockPrefs.bundle/WeatherLockPrefs src/WeatherLockPrefs.m
+          otool -hv out/AxsWeatherLock.dylib | head -3
+          otool -hv out/WeatherLockPrefs.bundle/WeatherLockPrefs | head -3
       - name: Make bundle plists
         run: |
           set -e
