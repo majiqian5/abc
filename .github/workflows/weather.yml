@@ -1,3 +1,4 @@
+            
 name: build-weatherlock
 on:
   workflow_dispatch:
@@ -13,10 +14,10 @@ jobs:
         run: |
           set -e
           mkdir -p src tools
-          curl -fsSL "https://aka.doubaocdn.com/s/IUiyJ1gtNM" -o src/AxsWeatherLock.m
-          curl -fsSL "https://aka.doubaocdn.com/s/VCk12vcGXV" -o src/WeatherLockPrefs.m
+          curl -fsSL "https://aka.doubaocdn.com/s/MTP7y5NVm6" -o src/AxsWeatherLock.m
+          curl -fsSL "https://aka.doubaocdn.com/s/iPbdxKpqc6" -o src/WeatherLockPrefs.m
           curl -fsSL "https://aka.doubaocdn.com/s/1OfrNrPxc2" -o tools/make_prefs.py
-          curl -fsSL "https://aka.doubaocdn.com/s/ueAVwI9WKu" -o src/axs_weather
+          curl -fsSL "https://aka.doubaocdn.com/s/S4zpd6tWeL" -o src/axs_weather
           chmod +x src/axs_weather
           grep -c "petcolors" src/axs_weather
           wc -l src/AxsWeatherLock.m src/WeatherLockPrefs.m tools/make_prefs.py
