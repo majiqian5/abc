@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'src/AxsWeatherLock.m'
+      - 'AxsWeatherLock.m'
       - '.github/workflows/weather.yml'
 jobs:
   build:
@@ -13,14 +14,25 @@ jobs:
       - name: Build arm64e dylib
         run: |
           set -e
+          echo "== repo .m files =="
+          find . -name "*.m" -maxdepth 4 -print || true
+          SRC=$(find . -name "AxsWeatherLock.m" | head -1)
+          if [ -z "$SRC" ]; then
+            echo "::error::AxsWeatherLock.m not found in repo"
+            exit 1
+          fi
+          echo "using: $SRC"
+          wc -l "$SRC"
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
           mkdir -p out
           xcrun --sdk iphoneos clang -target arm64e-apple-ios15.0 \
             -isysroot "$SDK" -dynamiclib -O2 -fobjc-arc \
-            -framework UIKit -framework Foundation -framework CoreText \
+            -framework UIKit -framework Foundation \
+            -framework CoreGraphics -framework QuartzCore -framework CoreText \
             -install_name /var/jb/Library/MobileSubstrate/DynamicLibraries/AxsWeatherLock.dylib \
-            -o out/AxsWeatherLock.dylib AxsWeatherLock.m
+            -o out/AxsWeatherLock.dylib "$SRC"
           otool -hv out/AxsWeatherLock.dylib | head -4
+          lipo -info out/AxsWeatherLock.dylib
       - name: Sign
         run: |
           brew install ldid >/dev/null 2>&1 || true
@@ -29,3 +41,5 @@ jobs:
         with:
           name: weatherlock-arm64e
           path: out/AxsWeatherLock.dylib
+
+        
