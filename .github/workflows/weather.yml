@@ -13,12 +13,12 @@ jobs:
         run: |
           set -e
           mkdir -p src tools
-          curl -fsSL "https://aka.doubaocdn.com/s/nVPmiQDXW5" -o src/AxsWeatherLock.m
-          curl -fsSL "https://aka.doubaocdn.com/s/beWvCHLFQH" -o src/WeatherLockPrefs.m
+          curl -fsSL "https://aka.doubaocdn.com/s/kFVBcvvDqV" -o src/AxsWeatherLock.m
+          curl -fsSL "https://aka.doubaocdn.com/s/xNUK2lhZWm" -o src/WeatherLockPrefs.m
           curl -fsSL "https://aka.doubaocdn.com/s/1OfrNrPxc2" -o tools/make_prefs.py
           wc -l src/AxsWeatherLock.m src/WeatherLockPrefs.m tools/make_prefs.py
-          grep -c "CSCoverSheetViewController" src/AxsWeatherLock.m
-          grep -c "WeatherLockSettingsController" src/WeatherLockPrefs.m
+          grep -c "CSCoverSheetViewController" src/AxsWeatherLock.m; grep -c "chrome" src/AxsWeatherLock.m
+          grep -c "WeatherLockSettingsController" src/WeatherLockPrefs.m; grep -c "reloadSpecifiers" src/WeatherLockPrefs.m
       - name: Compile
         run: |
           set -e
@@ -32,7 +32,8 @@ jobs:
             -o out/AxsWeatherLock.dylib src/AxsWeatherLock.m
           xcrun --sdk iphoneos clang -target arm64e-apple-ios15.0 \
             -isysroot "$SDK" -bundle -O2 -fobjc-arc \
-            -framework UIKit -framework Foundation \
+            -framework UIKit -framework Foundation -framework CoreFoundation \
+            -Wl,-undefined,dynamic_lookup \
             -o out/WeatherLockPrefs.bundle/WeatherLockPrefs src/WeatherLockPrefs.m
           otool -hv out/AxsWeatherLock.dylib | head -3
           otool -hv out/WeatherLockPrefs.bundle/WeatherLockPrefs | head -3
