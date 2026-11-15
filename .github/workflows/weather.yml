@@ -23,6 +23,9 @@ jobs:
         run: |
           set -e
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          PRIV="$SDK/System/Library/PrivateFrameworks"
+          echo "Preferences.framework 存在于 SDK: $([ -d "$PRIV/Preferences.framework" ] && echo yes || echo no)"
+          ls "$PRIV/Preferences.framework" || true
           rm -rf out; mkdir -p out/WeatherLockPrefs.bundle
           for ARCH in arm64 arm64e; do
             xcrun --sdk iphoneos clang -target ${ARCH}-apple-ios15.0 \
@@ -32,6 +35,7 @@ jobs:
               -o out/AxsWeatherLock.$ARCH src/AxsWeatherLock.m
             xcrun --sdk iphoneos clang -target ${ARCH}-apple-ios15.0 \
               -isysroot "$SDK" -bundle -O2 -fobjc-arc \
+              -F "$PRIV" -framework Preferences \
               -framework UIKit -framework Foundation -framework CoreFoundation \
               -Wl,-undefined,dynamic_lookup \
               -o out/WeatherLockPrefs.bundle/WeatherLockPrefs.$ARCH src/WeatherLockPrefs.m
@@ -43,6 +47,7 @@ jobs:
                 out/WeatherLockPrefs.bundle/WeatherLockPrefs.arm64 out/WeatherLockPrefs.bundle/WeatherLockPrefs.arm64e
           xcrun lipo -info out/AxsWeatherLock.dylib
           xcrun lipo -info out/WeatherLockPrefs.bundle/WeatherLockPrefs
+          otool -L out/WeatherLockPrefs.bundle/WeatherLockPrefs | head -8
       - name: Make bundle plists
         run: |
           set -e
@@ -61,3 +66,5 @@ jobs:
         with:
           name: weatherlock-arm64e
           path: out/weatherlock-arm64e.zip
+
+        
