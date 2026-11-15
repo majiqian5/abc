@@ -1,3 +1,4 @@
+            
 name: build-weatherlock
 on:
   workflow_dispatch:
@@ -15,15 +16,15 @@ jobs:
           mkdir -p src tools
           T=$(find . -maxdepth 4 -name "AxsWeatherLock.m" | head -1)
           if [ -z "$T" ]; then
-            curl -fsSL "https://aka.doubaocdn.com/s/hbXKUHkwFi" -o src/AxsWeatherLock.m
+            curl -fsSL "https://aka.doubaocdn.com/s/nVPmiQDXW5" -o src/AxsWeatherLock.m
             T=src/AxsWeatherLock.m
           fi
           P=$(find . -maxdepth 4 -name "WeatherLockPrefs.m" | head -1)
           if [ -z "$P" ]; then
-            curl -fsSL "https://aka.doubaocdn.com/s/M3rA7pI9mg" -o src/WeatherLockPrefs.m
+            curl -fsSL "https://aka.doubaocdn.com/s/beWvCHLFQH" -o src/WeatherLockPrefs.m
             P=src/WeatherLockPrefs.m
           fi
-          [ -f tools/make_prefs.py ] || curl -fsSL "https://aka.doubaocdn.com/s/uZXxefEsH1" -o tools/make_prefs.py
+          [ -f tools/make_prefs.py ] || curl -fsSL "https://aka.doubaocdn.com/s/1OfrNrPxc2" -o tools/make_prefs.py
           echo "tweak=$T"; echo "prefs=$P"
           wc -l "$T" "$P" tools/make_prefs.py
       - name: Compile
