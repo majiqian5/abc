@@ -1,4 +1,3 @@
-            
 name: build-weatherlock
 on:
   workflow_dispatch:
@@ -20,24 +19,30 @@ jobs:
           wc -l src/AxsWeatherLock.m src/WeatherLockPrefs.m tools/make_prefs.py
           grep -c "CSCoverSheetViewController" src/AxsWeatherLock.m; grep -c "chrome" src/AxsWeatherLock.m
           grep -c "PSSpecifier" src/WeatherLockPrefs.m
-      - name: Compile
+      - name: Compile fat arm64 plus arm64e
         run: |
           set -e
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
           rm -rf out; mkdir -p out/WeatherLockPrefs.bundle
-          xcrun --sdk iphoneos clang -target arm64e-apple-ios15.0 \
-            -isysroot "$SDK" -dynamiclib -O2 -fobjc-arc \
-            -framework UIKit -framework Foundation \
-            -framework CoreGraphics -framework QuartzCore \
-            -install_name /var/jb/Library/MobileSubstrate/DynamicLibraries/AxsWeatherLock.dylib \
-            -o out/AxsWeatherLock.dylib src/AxsWeatherLock.m
-          xcrun --sdk iphoneos clang -target arm64e-apple-ios15.0 \
-            -isysroot "$SDK" -bundle -O2 -fobjc-arc \
-            -framework UIKit -framework Foundation -framework CoreFoundation \
-            -Wl,-undefined,dynamic_lookup \
-            -o out/WeatherLockPrefs.bundle/WeatherLockPrefs src/WeatherLockPrefs.m
-          otool -hv out/AxsWeatherLock.dylib | head -3
-          otool -hv out/WeatherLockPrefs.bundle/WeatherLockPrefs | head -3
+          for ARCH in arm64 arm64e; do
+            xcrun --sdk iphoneos clang -target ${ARCH}-apple-ios15.0 \
+              -isysroot "$SDK" -dynamiclib -O2 -fobjc-arc \
+              -framework UIKit -framework Foundation -framework CoreGraphics -framework QuartzCore \
+              -install_name /var/jb/Library/MobileSubstrate/DynamicLibraries/AxsWeatherLock.dylib \
+              -o out/AxsWeatherLock.$ARCH src/AxsWeatherLock.m
+            xcrun --sdk iphoneos clang -target ${ARCH}-apple-ios15.0 \
+              -isysroot "$SDK" -bundle -O2 -fobjc-arc \
+              -framework UIKit -framework Foundation -framework CoreFoundation \
+              -Wl,-undefined,dynamic_lookup \
+              -o out/WeatherLockPrefs.bundle/WeatherLockPrefs.$ARCH src/WeatherLockPrefs.m
+          done
+          xcrun lipo -create -output out/AxsWeatherLock.dylib out/AxsWeatherLock.arm64 out/AxsWeatherLock.arm64e
+          xcrun lipo -create -output out/WeatherLockPrefs.bundle/WeatherLockPrefs \
+            out/WeatherLockPrefs.bundle/WeatherLockPrefs.arm64 out/WeatherLockPrefs.bundle/WeatherLockPrefs.arm64e
+          rm -f out/AxsWeatherLock.arm64 out/AxsWeatherLock.arm64e \
+                out/WeatherLockPrefs.bundle/WeatherLockPrefs.arm64 out/WeatherLockPrefs.bundle/WeatherLockPrefs.arm64e
+          xcrun lipo -info out/AxsWeatherLock.dylib
+          xcrun lipo -info out/WeatherLockPrefs.bundle/WeatherLockPrefs
       - name: Make bundle plists
         run: |
           set -e
