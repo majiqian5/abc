@@ -1,3 +1,4 @@
+            
 name: build-weatherlock
 on:
   workflow_dispatch:
@@ -14,11 +15,11 @@ jobs:
           set -e
           mkdir -p src tools
           curl -fsSL "https://aka.doubaocdn.com/s/kFVBcvvDqV" -o src/AxsWeatherLock.m
-          curl -fsSL "https://aka.doubaocdn.com/s/xNUK2lhZWm" -o src/WeatherLockPrefs.m
+          curl -fsSL "https://aka.doubaocdn.com/s/YUAbkVZKV8" -o src/WeatherLockPrefs.m
           curl -fsSL "https://aka.doubaocdn.com/s/1OfrNrPxc2" -o tools/make_prefs.py
           wc -l src/AxsWeatherLock.m src/WeatherLockPrefs.m tools/make_prefs.py
           grep -c "CSCoverSheetViewController" src/AxsWeatherLock.m; grep -c "chrome" src/AxsWeatherLock.m
-          grep -c "WeatherLockSettingsController" src/WeatherLockPrefs.m; grep -c "reloadSpecifiers" src/WeatherLockPrefs.m
+          grep -c "PSSpecifier" src/WeatherLockPrefs.m
       - name: Compile
         run: |
           set -e
