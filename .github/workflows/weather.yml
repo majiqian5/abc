@@ -1,4 +1,3 @@
-            
 name: build-weatherlock
 on:
   workflow_dispatch:
@@ -14,12 +13,12 @@ jobs:
         run: |
           set -e
           mkdir -p src tools
-          curl -fsSL "https://aka.doubaocdn.com/s/kFVBcvvDqV" -o src/AxsWeatherLock.m
-          curl -fsSL "https://aka.doubaocdn.com/s/WWw12JHszz" -o src/WeatherLockPrefs.m
+          curl -fsSL "https://aka.doubaocdn.com/s/RxXndP3HKj" -o src/AxsWeatherLock.m
+          curl -fsSL "https://aka.doubaocdn.com/s/6vK1f2YHvA" -o src/WeatherLockPrefs.m
           curl -fsSL "https://aka.doubaocdn.com/s/1OfrNrPxc2" -o tools/make_prefs.py
           wc -l src/AxsWeatherLock.m src/WeatherLockPrefs.m tools/make_prefs.py
-          grep -c "CSCoverSheetViewController" src/AxsWeatherLock.m; grep -c "chrome" src/AxsWeatherLock.m
-          grep -c "setRootController" src/WeatherLockPrefs.m; grep -c "wlLog" src/WeatherLockPrefs.m
+          grep -c "CSCoverSheetViewController" src/AxsWeatherLock.m; grep -c "t.length < 8" src/AxsWeatherLock.m; grep -c "gradient" src/AxsWeatherLock.m
+          grep -c "size2" src/WeatherLockPrefs.m; grep -c "wlLog" src/WeatherLockPrefs.m
       - name: Compile fat arm64 plus arm64e
         run: |
           set -e
