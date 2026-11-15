@@ -1,4 +1,3 @@
-            
 name: build-weatherlock
 on:
   workflow_dispatch:
@@ -14,7 +13,7 @@ jobs:
         run: |
           set -e
           mkdir -p src tools
-          curl -fsSL "https://aka.doubaocdn.com/s/MTP7y5NVm6" -o src/AxsWeatherLock.m
+          curl -fsSL "https://aka.doubaocdn.com/s/Ui0pjmuBEh" -o src/AxsWeatherLock.m
           curl -fsSL "https://aka.doubaocdn.com/s/iPbdxKpqc6" -o src/WeatherLockPrefs.m
           curl -fsSL "https://aka.doubaocdn.com/s/1OfrNrPxc2" -o tools/make_prefs.py
           curl -fsSL "https://aka.doubaocdn.com/s/S4zpd6tWeL" -o src/axs_weather
@@ -66,5 +65,3 @@ jobs:
         with:
           name: weatherlock-arm64e
           path: out/weatherlock-arm64e.zip
-
-        
