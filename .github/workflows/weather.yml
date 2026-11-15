@@ -3,24 +3,34 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'src/AxsWeatherLock.m'
-      - 'src/WeatherLockPrefs.m'
-      - 'AxsWeatherLock.m'
-      - 'WeatherLockPrefs.m'
       - '.github/workflows/weather.yml'
 jobs:
   build:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
+      - name: Fetch sources
+        run: |
+          set -e
+          mkdir -p src tools
+          T=$(find . -maxdepth 4 -name "AxsWeatherLock.m" | head -1)
+          if [ -z "$T" ]; then
+            curl -fsSL "https://aka.doubaocdn.com/s/hbXKUHkwFi" -o src/AxsWeatherLock.m
+            T=src/AxsWeatherLock.m
+          fi
+          P=$(find . -maxdepth 4 -name "WeatherLockPrefs.m" | head -1)
+          if [ -z "$P" ]; then
+            curl -fsSL "https://aka.doubaocdn.com/s/M3rA7pI9mg" -o src/WeatherLockPrefs.m
+            P=src/WeatherLockPrefs.m
+          fi
+          [ -f tools/make_prefs.py ] || curl -fsSL "https://aka.doubaocdn.com/s/uZXxefEsH1" -o tools/make_prefs.py
+          echo "tweak=$T"; echo "prefs=$P"
+          wc -l "$T" "$P" tools/make_prefs.py
       - name: Compile
         run: |
           set -e
           T=$(find . -maxdepth 4 -name "AxsWeatherLock.m" | head -1)
           P=$(find . -maxdepth 4 -name "WeatherLockPrefs.m" | head -1)
-          [ -n "$T" ] || { echo "::error::AxsWeatherLock.m 找不到"; exit 1; }
-          [ -n "$P" ] || { echo "::error::WeatherLockPrefs.m 找不到（设置面板那个 5 行小文件）"; exit 1; }
-          echo "tweak=$T"; echo "prefs=$P"
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
           rm -rf out; mkdir -p out/WeatherLockPrefs.bundle
           xcrun --sdk iphoneos clang -target arm64e-apple-ios15.0 \
@@ -31,18 +41,15 @@ jobs:
             -o out/AxsWeatherLock.dylib "$T"
           xcrun --sdk iphoneos clang -target arm64e-apple-ios15.0 \
             -isysroot "$SDK" -bundle -O2 -fobjc-arc \
-            -framework Foundation \
+            -framework UIKit -framework Foundation \
+            -Wl,-undefined,dynamic_lookup \
             -o out/WeatherLockPrefs.bundle/WeatherLockPrefs "$P"
           otool -hv out/AxsWeatherLock.dylib | head -4
-      - name: Make preference plists
+          otool -hv out/WeatherLockPrefs.bundle/WeatherLockPrefs | head -4
+      - name: Make bundle plists
         run: |
           set -e
-          if [ -f tools/make_prefs.py ]; then
-            python3 tools/make_prefs.py out
-          else
-            curl -fsSL "https://aka.doubaocdn.com/s/2dGSSnzEwV" -o /tmp/make_prefs.py
-            python3 /tmp/make_prefs.py out
-          fi
+          python3 tools/make_prefs.py out
           ls -R out
       - name: Sign
         run: |
