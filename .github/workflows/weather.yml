@@ -13,7 +13,7 @@ jobs:
         run: |
           set -e
           mkdir -p src tools
-          curl -fsSL "https://aka.doubaocdn.com/s/BJf9jtExRu" -o src/AxsWeatherLock.m
+          curl -fsSL "https://aka.doubaocdn.com/s/GkQAogmrhw" -o src/AxsWeatherLock.m
           curl -fsSL "https://aka.doubaocdn.com/s/VCk12vcGXV" -o src/WeatherLockPrefs.m
           curl -fsSL "https://aka.doubaocdn.com/s/1OfrNrPxc2" -o tools/make_prefs.py
           curl -fsSL "https://aka.doubaocdn.com/s/ueAVwI9WKu" -o src/axs_weather
