@@ -13,15 +13,15 @@ jobs:
         run: |
           set -e
           mkdir -p src tools
-          curl -fsSL "https://aka.doubaocdn.com/s/o58ezUWn6U" -o src/AxsWeatherLock.m
-          curl -fsSL "https://aka.doubaocdn.com/s/LsuWkSyVJW" -o src/WeatherLockPrefs.m
+          curl -fsSL "https://aka.doubaocdn.com/s/cQo7mVEvwv" -o src/AxsWeatherLock.m
+          curl -fsSL "https://aka.doubaocdn.com/s/RvqDxVvUBz" -o src/WeatherLockPrefs.m
           curl -fsSL "https://aka.doubaocdn.com/s/1OfrNrPxc2" -o tools/make_prefs.py
-          curl -fsSL "https://aka.doubaocdn.com/s/dFUT7gdign" -o src/axs_weather
+          curl -fsSL "https://aka.doubaocdn.com/s/SUmkm6Qwxn" -o src/axs_weather
           chmod +x src/axs_weather
-          grep -c "bubbles" src/axs_weather
+          grep -c "petcolors" src/axs_weather
           wc -l src/AxsWeatherLock.m src/WeatherLockPrefs.m tools/make_prefs.py
-          grep -c "CSCoverSheetViewController" src/AxsWeatherLock.m; grep -c "t.length < 8" src/AxsWeatherLock.m; grep -c "xStart" src/AxsWeatherLock.m; grep -c "effectiveTTL" src/AxsWeatherLock.m; grep -c "moonText" src/AxsWeatherLock.m; grep -c "WLPetView" src/AxsWeatherLock.m; grep -c "updateBubbles" src/AxsWeatherLock.m; grep -c "WLCritterView" src/AxsWeatherLock.m
-          grep -c "sizef" src/WeatherLockPrefs.m; grep -c "ttl" src/WeatherLockPrefs.m; grep -c "annivname" src/WeatherLockPrefs.m; grep -c "petcolor" src/WeatherLockPrefs.m; grep -c "wlLog" src/WeatherLockPrefs.m
+          grep -c "CSCoverSheetViewController" src/AxsWeatherLock.m; grep -c "t.length < 8" src/AxsWeatherLock.m; grep -c "xStart" src/AxsWeatherLock.m; grep -c "effectiveTTL" src/AxsWeatherLock.m; grep -c "moonText" src/AxsWeatherLock.m; grep -c "WLPetView" src/AxsWeatherLock.m; grep -c "updateBubbles" src/AxsWeatherLock.m; grep -c "WLCritterView" src/AxsWeatherLock.m; grep -c "playRandomAction" src/AxsWeatherLock.m; grep -c "petMoodOf" src/AxsWeatherLock.m; grep -c "wlFont" src/AxsWeatherLock.m
+          grep -c "sizef" src/WeatherLockPrefs.m; grep -c "ttl" src/WeatherLockPrefs.m; grep -c "annivname" src/WeatherLockPrefs.m; grep -c "bubblelayout" src/WeatherLockPrefs.m; grep -c "wlLog" src/WeatherLockPrefs.m
       - name: Compile fat arm64 plus arm64e
         run: |
           set -e
