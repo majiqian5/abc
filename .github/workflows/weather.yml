@@ -13,8 +13,8 @@ jobs:
         run: |
           set -e
           mkdir -p src tools
-          curl -fsSL "https://aka.doubaocdn.com/s/UlbUAnEWX3" -o src/AxsWeatherLock.m
-          curl -fsSL "https://aka.doubaocdn.com/s/1KyXy0Nyp0" -o src/WeatherLockPrefs.m
+          curl -fsSL "https://aka.doubaocdn.com/s/eV8bNffCkx" -o src/AxsWeatherLock.m
+          curl -fsSL "https://aka.doubaocdn.com/s/tLROGyvVi3" -o src/WeatherLockPrefs.m
           curl -fsSL "https://aka.doubaocdn.com/s/1OfrNrPxc2" -o tools/make_prefs.py
           wc -l src/AxsWeatherLock.m src/WeatherLockPrefs.m tools/make_prefs.py
           grep -c "CSCoverSheetViewController" src/AxsWeatherLock.m; grep -c "t.length < 8" src/AxsWeatherLock.m; grep -c "gradient" src/AxsWeatherLock.m
@@ -62,3 +62,5 @@ jobs:
         with:
           name: weatherlock-arm64e
           path: out/weatherlock-arm64e.zip
+
+        
