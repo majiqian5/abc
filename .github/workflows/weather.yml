@@ -19,7 +19,7 @@ jobs:
             -isysroot "$SDK" -dynamiclib -O2 -fobjc-arc \
             -framework UIKit -framework Foundation -framework CoreText \
             -install_name /var/jb/Library/MobileSubstrate/DynamicLibraries/AxsWeatherLock.dylib \
-            -o out/AxsWeatherLock.dylib src/AxsWeatherLock.m
+            -o out/AxsWeatherLock.dylib AxsWeatherLock.m
           otool -hv out/AxsWeatherLock.dylib | head -4
       - name: Sign
         run: |
